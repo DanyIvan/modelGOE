@@ -1,0 +1,3 @@
+[submodule "external/sciplot"]
+	path = external/sciplot
+	url = https://github.com/sciplot/sciplot
