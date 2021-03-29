@@ -5,8 +5,8 @@
 
 
 // constructor
-DynamicModel::DynamicModel(long double PrimaryProd, long double ReductantInput, long double BuriedOC, 
-long double OxygenInitialCond, long double TotalTime, long double TimeStep)
+DynamicModel::DynamicModel(double PrimaryProd, double ReductantInput, double BuriedOC, 
+double TotalTime, double TimeStep)
 {
     // set primary productivity
     SetPrimaryProd(PrimaryProd);
@@ -21,31 +21,30 @@ long double OxygenInitialCond, long double TotalTime, long double TimeStep)
     // set number of time stpes
     _NumberOfSteps = (int) _TotalTime / _TimeStep;  
     // set initial conditions
-    OxygenInitialCond = OxygenInitialCond;
     Oxygen.push_back(2 * GetReductantInput() / GetHydrogenEscape());
     Methane.push_back(GetReductantInput() / GetHydrogenEscape());
-    OrganicCarbon.push_back(GetBuriedOC() * (GetPrimaryProd() + GetReductantInput()) / GetOcExposure());          
+    OrganicCarbon.push_back(GetBuriedOC() * (GetReductantInput()) / GetOcExposure());          
 };
 
-long double DynamicModel::OcDecomposed(long double oxygen) 
+double DynamicModel::OcDecomposed(double oxygen) 
 {
     return oxygen / (oxygen + _ARInhibition);
 }
 
 // fraction of methane produced used by methanotrophs
-long double DynamicModel::MethaneProduced(long double oxygen) 
+double DynamicModel::MethaneProduced(double oxygen) 
 {
     return oxygen / (oxygen + _MethanotrophsMethane);
 }
 
 // fraction of the organic carbon available to decomposers 
-long double DynamicModel::OcAvailable(long double oxygen) 
+double DynamicModel::OcAvailable(double oxygen) 
 {
     return (1 - DynamicModel::OcDecomposed(oxygen)) * (1 - DynamicModel::MethaneProduced(oxygen));
 }
 
 // methane oxidation parametrization 
-long double DynamicModel::MethaneOxidation(long double oxygen) 
+double DynamicModel::MethaneOxidation(double oxygen) 
 {
     // std::cout << _PolynomialCoeffs[0] * pow(log10(oxygen), 4) <<  std::endl;
     // std::cout << _PolynomialCoeffs[1] * pow(log10(oxygen), 3)  <<  std::endl;
@@ -66,28 +65,28 @@ long double DynamicModel::MethaneOxidation(long double oxygen)
         _PolynomialCoeffs[4]);
 }
 
-void DynamicModel::FindSteadyStates()
+void DynamicModel::FindFinalStates()
 {
-long double OxygenLast = Oxygen[0];
-long double MethaneLast = Methane[0];
-long double OrganicCarbonLast = OrganicCarbon[0];
-std::cout <<"----------------------------------------------" << std::endl;
-std::cout << "OxygenLast: " << OxygenLast << std::endl;
-std::cout << "MethaneLast: " << MethaneLast << std::endl;
-std::cout << "OrganicCarbonLast: " << OrganicCarbonLast << std::endl;
+double OxygenLast = Oxygen[0];
+double MethaneLast = Methane[0];
+double OrganicCarbonLast = OrganicCarbon[0];
+// std::cout <<"----------------------------------------------" << std::endl;
+// std::cout << "OxygenLast: " << OxygenLast << std::endl;
+// std::cout << "MethaneLast: " << MethaneLast << std::endl;
+// std::cout << "OrganicCarbonLast: " << OrganicCarbonLast << std::endl;
 
 
-for (int i=0; i <= _NumberOfSteps -1; i ++)
+for (int i=0; i <= _NumberOfSteps; i ++)
     {
-    // long double omega = OcAvailable(OxygenLast);
-    // long double phi = MethaneOxidation(OxygenLast);
-    long double MethaneStep =  GetTimeStep() / 2 * (
+    // double omega = OcAvailable(OxygenLast);
+    // double phi = MethaneOxidation(OxygenLast);
+    double MethaneStep =  GetTimeStep() / 2 * (
         OcAvailable(OxygenLast) * (1 - GetBuriedOC()) * (GetPrimaryProd() + GetReductantInput()) +
         OcAvailable(OxygenLast) * GetOcExposure() * OrganicCarbonLast -
         2 * GetHydrogenEscape() * MethaneLast -
         MethaneOxidation(OxygenLast) * pow(MethaneLast, 0.7)
     );
-    long double OxygenStep =  GetTimeStep() * (
+    double OxygenStep =  GetTimeStep() * (
         OcAvailable(OxygenLast) * GetPrimaryProd() -
         (1 - OcAvailable(OxygenLast)) * GetReductantInput() +
         GetBuriedOC() * (1 - OcAvailable(OxygenLast)) * (GetPrimaryProd() + GetReductantInput()) -
@@ -95,7 +94,7 @@ for (int i=0; i <= _NumberOfSteps -1; i ++)
         GetHydrogenEscape() * MethaneLast -\
         MethaneOxidation(OxygenLast) * pow(MethaneLast, 0.7)
     );
-    long double OrganicCarbonStep =  GetTimeStep() * (
+    double OrganicCarbonStep =  GetTimeStep() * (
         GetBuriedOC() * (GetPrimaryProd() + GetReductantInput())
         - GetOcExposure() * OrganicCarbonLast
     );
